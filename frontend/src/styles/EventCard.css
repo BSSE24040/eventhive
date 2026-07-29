@@ -1,0 +1,78 @@
+.event-card {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.event-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.event-card-image {
+  position: relative;
+  height: 160px;
+  background: linear-gradient(135deg, var(--color-primary-light), #fff);
+}
+
+.event-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.event-card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-primary);
+}
+
+.event-card-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.event-card-body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.event-card-body h3 {
+  font-size: 1.05rem;
+}
+
+.event-card-meta {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.event-card-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+}
+
+.event-card-price {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.event-card-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}

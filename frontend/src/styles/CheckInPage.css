@@ -1,0 +1,15 @@
+.check-in-page {
+  max-width: 480px;
+}
+
+.check-in-subtitle {
+  color: var(--color-text-muted);
+  margin: 8px 0 24px;
+}
+
+.check-in-form {
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

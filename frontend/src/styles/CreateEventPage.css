@@ -1,0 +1,49 @@
+.create-event-page h1 {
+  margin-bottom: 20px;
+}
+
+.create-event-form {
+  padding: 30px;
+  max-width: 720px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.ticket-types-heading {
+  margin: 8px 0 12px;
+  font-size: 1.1rem;
+}
+
+.ticket-type-row-form {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ticket-type-row-form input {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border);
+}
+
+.remove-ticket-type {
+  white-space: nowrap;
+  padding: 8px 12px;
+}
+
+.create-event-submit {
+  width: 100%;
+  margin-top: 24px;
+}
+
+@media (max-width: 640px) {
+  .form-row,
+  .ticket-type-row-form {
+    grid-template-columns: 1fr;
+  }
+}
