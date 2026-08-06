@@ -1,70 +1,167 @@
-# 🐝 EventHive — Real-Time Event Booking & Ticketing Platform
+# EventHive - Real-Time Event Booking & Ticketing Platform
 
-EventHive is a full-stack MERN application for discovering, booking, and managing tickets to live events. It's built to demonstrate production-grade patterns, not just CRUD — the core feature is **concurrency-safe seat booking**, so two people can never accidentally buy the same last seat.
+EventHive is a full-stack MERN application designed to handle real-world backend engineering challenges encountered in ticketing platforms like Eventbrite and BookMyShow. It features concurrency-safe seat reservations, real-time inventory updates using WebSockets, secure multi-role authentication, Stripe payments, QR-code ticketing, and an organizer analytics dashboard.
 
-## Highlight Features
+---
 
-- **Race-condition-free ticket booking** — uses an atomic MongoDB `findOneAndUpdate` with an inventory check built into the filter itself, so concurrent buyers can never oversell an event (see `backend/src/services/bookingService.js`)
-- **Real-time seat availability** via Socket.io — everyone viewing an event page sees seat counts update live as others book
-- **JWT auth** with short-lived access tokens + httpOnly refresh token cookies, and role-based access control (attendee / organizer / admin)
-- **Stripe test-mode payments** with a 10-minute seat hold that auto-releases if payment isn't completed
-- **QR-code ticket generation** and organizer check-in scanning at the door
-- **Organizer analytics dashboard** with MongoDB aggregation pipelines (revenue over time, ticket-type breakdown)
-- **Reviews & ratings** restricted to users with a confirmed booking
-- **Email confirmations** via Nodemailer
+## Technical Features
 
-## Project Structure
+### Concurrency-Safe Seat Reservations
+To prevent overselling during high-concurrency traffic, seat availability checks and seat updates are executed as a single atomic operation in MongoDB using `findOneAndUpdate()`. This avoids race conditions by ensuring that concurrent booking requests cannot over-allocate remaining tickets.
+
+### Real-Time Inventory Updates
+Socket.io is integrated to broadcast live seat inventory updates across connected clients. When a user reserves tickets, all users viewing that specific event receive updated seat availability in real time without manual page refreshes.
+
+### Reservation Expiry Handling
+Upon initiating a booking, selected seats are held temporarily for 10 minutes. If payment processing is not completed within this window, the reserved seats automatically return to the available inventory pool.
+
+### QR Code Ticketing & Check-in
+Successful transactions trigger the generation of individual tickets with unique serial codes and corresponding QR code image payloads. Organizers can scan these codes to handle attendee check-in.
+
+### Analytics Dashboard
+Organizer metrics are computed using MongoDB Aggregation Pipelines to deliver real-time data on total revenue, ticket sales distribution, booking counts, and performance over time.
+
+---
+
+## Features Overview
+
+* **Authentication & Authorization:** JWT access tokens, HTTP-only refresh token cookies, password hashing with bcrypt, and Role-Based Access Control (RBAC) across Attendee, Organizer, and Admin roles.
+* **Event Management:** Full CRUD operations for event creation, ticket tier setup, category tagging, city-based filtering, and paginated queries.
+* **Payments:** Integration with Stripe PaymentIntents to handle client secret verification, secure card processing, and payment status callbacks.
+* **Reviews & Ratings:** Restrictive review system allowing only verified ticket purchasers to submit 5-star ratings and textual feedback.
+* **Email Confirmations:** Automated transaction receipts and ticket details delivered via Nodemailer SMTP integrations.
+
+---
+
+## Technical Stack
+
+### Frontend
+* React 18 (Vite build tool)
+* React Router DOM
+* Axios
+* Context API
+* Socket.io Client
+* Stripe.js
+* Recharts
+* Modular CSS
+
+### Backend
+* Node.js & Express.js framework
+* MongoDB & Mongoose ODM
+* Socket.io
+* Stripe API
+* Nodemailer
+* QRCode generator
+* bcrypt & cookie-parser
+* Express Rate Limit
+
+---
+
+## Architecture & Project Structure
+
+EventHive follows a layered backend architecture dividing responsibilities between Routes, Controllers, Services, Models, and Socket Handlers.
 
 ```
 EventHive/
-├── backend/     # Express + MongoDB API, Socket.io, Stripe, Nodemailer
-└── frontend/    # React (Vite) client
+├── backend/
+│   ├── config/
+│   ├── controllers/
+│   ├── middlewares/
+│   ├── models/
+│   ├── routes/
+│   ├── services/
+│   ├── sockets/
+│   ├── utils/
+│   └── server.js
+│
+└── frontend/
+    ├── components/
+    ├── context/
+    ├── pages/
+    ├── services/
+    ├── styles/
+    ├── utils/
+    └── App.jsx
 ```
 
-See `backend/README.md` and `frontend/README.md` for setup instructions specific to each half.
+---
 
-## Quick Start
+## API & Booking Workflow
 
-1. **Backend**
+```
+User Selects Event -> Choose Ticket Type -> Initiate Reservation -> Atomic DB Lock 
+   -> Stripe Payment -> Transaction Confirmation -> QR Ticket Generation 
+   -> Email Confirmation Sent
+```
+
+---
+
+## Environment Variables Configuration
+
+### Backend (`backend/.env`)
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_access_secret
+JWT_REFRESH_SECRET=your_jwt_refresh_secret
+CLIENT_URL=http://localhost:5173
+STRIPE_SECRET_KEY=your_stripe_secret_key
+SMTP_HOST=your_smtp_host
+SMTP_PORT=587
+SMTP_USER=your_smtp_username
+SMTP_PASS=your_smtp_password
+EMAIL_FROM=noreply@eventhive.com
+```
+
+### Frontend (`frontend/.env`)
+```env
+VITE_API_URL=http://localhost:5000/api
+VITE_SOCKET_URL=http://localhost:5000
+VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+```
+
+---
+
+## Local Development Setup
+
+### Prerequisites
+* Node.js (v18 or higher)
+* MongoDB database instance
+* Stripe developer test accounts
+* SMTP credentials (e.g., Mailtrap, SendGrid)
+
+### Installation Steps
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/BSSE24040/EventHive.git
+   cd EventHive
+   ```
+
+2. Setup Backend:
    ```bash
    cd backend
-  SMTP creds
    npm install
- 
    npm run dev
    ```
 
-2. **Frontend**
+3. Setup Frontend:
    ```bash
-   cd frontend
-   
+   cd ../frontend
    npm install
    npm run dev
    ```
 
+---
 
-## The Concurrency Problem, Explained
+## License
 
-Imagine an event has 1 seat left, and two people click "Book Now" at the exact same millisecond. A naive implementation reads "1 seat left," and both requests pass that check before either writes back, so both succeed — the event is now oversold.
+This project is open source and available under the MIT License.
 
-EventHive prevents this by folding the availability check directly into the atomic update:
+---
 
-```js
-Event.findOneAndUpdate(
-  { _id: eventId, ticketTypes: { $elemMatch: { _id: typeId, $expr: { $lte: [...] } } } },
-  { $inc: { 'ticketTypes.$[t].quantitySold': quantity } },
-  { arrayFilters: [{ 't._id': typeId }] }
-)
-```
+## Author
 
-MongoDB guarantees this operation is atomic — only one of the two concurrent requests can match the filter and succeed. The other gets `null` back and is told the event is sold out.
-
-## Tech Stack
-
-- **Frontend:** React 18, Vite, React Router, Socket.io-client, Stripe.js, Recharts, plain CSS (no Tailwind)
-- **Backend:** Node.js, Express, MongoDB/Mongoose, Socket.io, Stripe, JWT, Nodemailer, QRCode
-
-## Naming Conventions
-
-- Backend/logic files: `camelCase.js` (e.g. `authController.js`)
-- Frontend React components: `PascalCase.jsx` (e.g. `EventCard.jsx`)
+**Mahad Ashfaq**
+* GitHub: https://github.com/BSSE24040
+* LinkedIn: www.linkedin.com/in/muhammadmahadashfaq
